@@ -7,34 +7,59 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 defaults:
   run:
     working-directory: shopping
 
 jobs:
-  build:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: shopping/package-lock.json
-
-      - name: Install Dependencies
+      - name: Install dependencies
         run: npm ci || npm install
-
-      - name: Lint Code
+      - name: ESLint
         run: npm run lint
 
-      - name: Type Check
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: shopping/package-lock.json
+      - name: Install dependencies
+        run: npm ci || npm install
+      - name: TypeScript
         run: npm run typecheck
 
-      - name: Build
+  build:
+    name: Build
+    needs: [lint, typecheck]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: shopping/package-lock.json
+      - name: Install dependencies
+        run: npm ci || npm install
+      - name: Production build
         run: npm run build
