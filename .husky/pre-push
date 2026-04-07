@@ -1,1 +1,1 @@
-cd shopping && npm run typecheck
+npm --prefix shopping run typecheck
